@@ -1,4 +1,5 @@
 from asyncio.windows_events import NULL
+from ctypes import sizeof
 import os.path
 import csv
 
@@ -9,6 +10,9 @@ class myDB:
         #csv file to be split into the 3 files
         #csv file
         self.filestream = None
+
+        #delimiter
+        self.delimiter = ","
 
         #name of the database
         self.DB_name = ""
@@ -31,7 +35,7 @@ class myDB:
         #total number of records in the data file
         self.num_record = 0
 
-
+        #total number of records in the data file
         self.numSortedRecords = 0
 
 
@@ -128,26 +132,11 @@ class myDB:
             self.numSortedRecords = 0
             self.numOverflowRecords = 0
 
-            #wreading from file
-            csv_reader = csv.reader(csv_file, delimiter=',')
-            line_count = 0
-            for row in csv_reader:
-                if line_count == 0:
-                    print(f'Column names are {", ".join(row)}')
-                    line_count += 1
-                else:
-                    print(f'\t{row[0]} works in the {row[1]} department, and was born in {row[2]}.')
-                    line_count += 1
-                print(f'Processed {line_count} lines.')
+            
 
             
 
-            #writing to file
-            with open('employee_file.csv', mode='w') as employee_file:
-                employee_writer = csv.writer(employee_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-
-                employee_writer.writerow(['John Smith', 'Accounting', 'November'])
-                employee_writer.writerow(['Erica Meyers', 'IT', 'March'])
+            
 
 
 
@@ -163,10 +152,45 @@ class myDB:
         return self.isDBOpened
 
 
-    def calculateRecordSize(self):
-        if self.isOpen() == True:
-            return 1
-        return 0
+    def calculateRecordSize(self,filename):
+        self.filestream = filename
+
+        record_count = 0
+        row_record_size = 0
+
+        if not os.path.isfile(self.filestream):
+            print(str(self.filename)+" not found")
+            return 0
+        else:
+            csv_data = open(self.filestream, 'r+')
+            #reading from file
+            csv_reader = csv.reader(csv_data, delimiter=',')
+            
+
+            for row in csv_reader:
+                
+                row_record_size = sizeof(row)
+
+                if row_record_size > self.record_size :
+                    self.record_size = row_record_size
+
+                record_count +=1
+                print(f'Processed {record_count} lines.')
+
+            self.num_record = self.numSortedRecords = record_count
+            csv_data.close()
+            
+        return self.record_size
+
+
+    def writeConfig(self)
+        #writing to file
+        config_writer = csv.writer(self.config_contents, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+        #column names
+        config_writer.writerow(['id', 'state', 'city', 'name'])
+        #database stats
+        config_writer.writerow([self.numSortedRecords, self.numOverflowRecords, self.record_size,self.db_size])    
 
 
 ###################################################################################from the starter code

@@ -1,6 +1,6 @@
 from MyDatabase import myDB
 
-filepath = "input.txt"
+filepath = "colleges-cr.csv"
 DBsize = 67
 rec_size = 71
 # rec_size = 72 if a Windows file with cr lf at ends of the lines
