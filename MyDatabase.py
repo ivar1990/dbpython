@@ -219,7 +219,7 @@ class myDB:
 
         #move to record position
         self.data_file.seek(0,0)
-        self.data_file.seek(self.numSortedRecords*self.record_size)
+        self.data_file.seek((self.numSortedRecords-1) *self.record_size)
 
         #write data
         data_writer.writerow([id, state, city, name])
