@@ -21,16 +21,15 @@ class myDB:
         #filenames for the 3 files
 
         #contains the fields of the records, total number of records, record size, db size,total number of overflow records 
-        self.config_file = NULL
+        self.config_file = ""
         #contains all the records
-        self.data_file = NULL
-        #TODO
-        self.overflow_file = NULL
+        self.data_file = ""
+        self.overflow_file = ""
 
         #data contents of the 3 database files
-        self.config_contents = NULL
-        self.data_contents = NULL
-        self.overflow_contents = NULL
+        self.config_contents = None
+        self.data_contents = None
+        self.overflow_contents = None
 
         #total number of records in the data file
         self.num_record = 0
@@ -44,7 +43,7 @@ class myDB:
         #length of the longest record in the data file
         self.record_size = 0
         #size of the total number of record in the data file
-        self.db_size = self.num_record * self.record_size
+        self.db_size = 0
 
         self.isDBCreated = False
         self.isDBOpened = False
@@ -53,24 +52,24 @@ class myDB:
         self.filestream = filename
 
         #name of the 3 files that will be created for this database
-        self.config_file = self.filestream + "lf.config"
-        self.data_file = self.filestream + "lf.data"
-        self.overflow_file = self.filestream + "lf.overflow"
+        self.config_file = self.filestream + "_lf.config"
+        self.data_file = self.filestream + "_lf.data"
+        self.overflow_file = self.filestream + "_lf.overflow"
 
         #check if the database exists by checking if the folder
         #contains the 3 files(config, data, and overflow files) 
         if not os.path.isfile(self.config_file):
-            print(str(self.filestream)+" not found")
+            print(str(self.config_file)+" not found")
             self.isDBCreated = False
             return self.isDBCreated
 
         if not os.path.isfile(self.data_file):
-            print(str(self.filestream)+" not found")
+            print(str(self.data_file)+" not found")
             self.isDBCreated = False
             return self.isDBCreated
 
         if not os.path.isfile(self.overflow_file):
-            print(str(self.filestream)+" not found")
+            print(str(self.overflow_file)+" not found")
             self.isDBCreated = False
             return self.isDBCreated
 
@@ -100,11 +99,12 @@ class myDB:
 
             #TODO
             #read the csv file 
-
             #increment the num_record variable
             #set the num_record to the numSortedRecords
+            self.calculateRecordSize(filename)
 
             #write the csv data into the "_lf.data" file
+            self.writeConfig()
 
             #close the database
             self.config_contents.close()
@@ -132,12 +132,7 @@ class myDB:
             self.numSortedRecords = 0
             self.numOverflowRecords = 0
 
-            
-
-            
-
-            
-
+            self.readConfig()
 
 
             #indicate that the user can query if the database is opened
@@ -158,18 +153,20 @@ class myDB:
         record_count = 0
         row_record_size = 0
 
-        if not os.path.isfile(self.filestream):
-            print(str(self.filename)+" not found")
+        if not os.path.isfile(filename):
+            print(str(filename)+" not found")
             return 0
         else:
-            csv_data = open(self.filestream, 'r+')
+            csv_data = open(filename, 'r+')
             #reading from file
             csv_reader = csv.reader(csv_data, delimiter=',')
             
 
             for row in csv_reader:
                 
-                row_record_size = sizeof(row)
+                
+                row_record_size = len(row)
+                print(f'row data {", ".join(row)}')
 
                 if row_record_size > self.record_size :
                     self.record_size = row_record_size
@@ -178,20 +175,53 @@ class myDB:
                 print(f'Processed {record_count} lines.')
 
             self.num_record = self.numSortedRecords = record_count
+            self.db_size = self.num_record * self.record_size
+
             csv_data.close()
             
         return self.record_size
 
 
-    def writeConfig(self)
+    def writeConfig(self):
         #writing to file
         config_writer = csv.writer(self.config_contents, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
         #column names
         config_writer.writerow(['id', 'state', 'city', 'name'])
         #database stats
-        config_writer.writerow([self.numSortedRecords, self.numOverflowRecords, self.record_size,self.db_size])    
+        config_writer.writerow([self.numSortedRecords, self.numOverflowRecords, self.record_size,self.db_size])   
 
+    def readConfig(self):
+        config_reader = csv.reader(self.config_contents,delimiter=',') 
+        line_count = 0
+        for row in config_reader:
+            if line_count == 0:
+                print(f'Column names are {", ".join(row)}')
+
+            if line_count == 1:
+                print(f'Database Stats are {", ".join(row)}')
+                print(f'\t Number of Sorted Records {row[0]} Number of Overflow records {row[1]} Record Size {row[2]} DB Size {row[3]}.')
+            
+                self.numSortedRecords = row[0]
+                self.numOverflowRecords = row[1]
+                self.record_size = row[2]
+                self.db_size = row[3]
+
+            line_count += 1
+        print(f'Processed {line_count} lines.')
+
+    def writeRecord(self,file_pos,id,state,city,name):
+        #writing to file
+        data_writer = csv.writer(self.data_contents, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+        #move to record position
+        self.data_file.seek(0,0)
+        self.data_file.seek(self.numSortedRecords*self.record_size)
+
+        #write data
+        data_writer.writerow([id, state, city, name])
+        
+        return True
 
 ###################################################################################from the starter code
 
@@ -249,14 +279,33 @@ class myDB:
     #close the database
     def CloseDB(self):
 
-        self.data.close()#part of the starter code i.e the data file contents
+        #self.data.close()#part of the starter code i.e the data file contents
 
         self.config_contents.close()
         self.data_contents.close()
         self.overflow_contents.close()
 
+        self.config_file = ""
+        self.data_file = ""
+        self.overflow_file = ""
+
         self.num_record = 0
         self.numSortedRecords = 0
         self.numOverflowRecords = 0
 
+        #total number of records in the data file
+        self.num_record = 0
+
+        #total number of records in the data file
+        self.numSortedRecords = 0
+
+
+        self.numOverflowRecords = 0
+
+        #length of the longest record in the data file
+        self.record_size = 0
+        #size of the total number of record in the data file
+        self.db_size = 0
+
+        self.isDBCreated = False
         self.isDBOpened = False
