@@ -16,7 +16,7 @@ else:
 
 
 sample.open("colleges-cr.csv")
-if sample.isCreated():
+if sample.isOpen():
     print("Database is open.")
 else:
     print("Database was not opened")

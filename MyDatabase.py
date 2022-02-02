@@ -14,6 +14,9 @@ class myDB:
         #delimiter
         self.delimiter = ","
 
+        #file position
+        self.file_pos = 0
+
         #name of the database
         self.DB_name = ""
         
@@ -96,8 +99,6 @@ class myDB:
             self.numSortedRecords = 0
             self.numOverflowRecords = 0
 
-
-            #TODO
             #read the csv file 
             #increment the num_record variable
             #set the num_record to the numSortedRecords
@@ -120,7 +121,7 @@ class myDB:
         return self.isDBCreated
 
     def open(self, filename): 
-        if self.checkDBexists(filename) == False :  
+        if self.checkDBexists(filename) == True :  
             #open the database
             self.config_contents = open(self.config_file, 'w+')
             self.data_contents = open(self.data_file, 'w+')
@@ -153,6 +154,7 @@ class myDB:
         record_count = 0
         row_record_size = 0
 
+        #check for the csv file
         if not os.path.isfile(filename):
             print(str(filename)+" not found")
             return 0
@@ -163,11 +165,12 @@ class myDB:
             
 
             for row in csv_reader:
-                
-                
+                #get the size of the record
                 row_record_size = len(row)
                 print(f'row data {", ".join(row)}')
 
+                #checks to see if the current record's size
+                #is larger that the class's 
                 if row_record_size > self.record_size :
                     self.record_size = row_record_size
 
