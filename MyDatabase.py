@@ -80,6 +80,25 @@ class myDB:
         self.isDBCreated = True
         return self.isDBCreated
 
+    def createDBFiles(self,filename):
+        self.filestream = filename
+
+        #name of the 3 files that will be created for this database
+        config_file = self.filestream + "_lf.config"
+        data_file = self.filestream + "_lf.data"
+        overflow_file = self.filestream + "_lf.overflow"
+
+        #create the files or if they exists then just open them
+        config_contents = open(self.config_file, 'w+')
+        data_contents = open(self.data_file, 'w+')
+        overflow_contents = open(self.overflow_file, 'w+')
+
+        #close the database
+        config_contents.close()
+        data_contents.close()
+        overflow_contents.close()
+
+
     def createDB(self, filename):
         self.filestream = filename
 
@@ -89,28 +108,24 @@ class myDB:
         self.overflow_file = self.filestream + "_lf.overflow"
 
         if self.checkDBexists(filename) == False :
-            #create the files or if they exists then just open them
-            self.config_contents = open(self.config_file, 'w+')
-            self.data_contents = open(self.data_file, 'w+')
-            self.overflow_contents = open(self.overflow_file, 'w+')
+
 
             #default values
             self.num_record = 0
             self.numSortedRecords = 0
             self.numOverflowRecords = 0
 
+            self.createDBFiles(filename)
+
             #read the csv file 
             #increment the num_record variable
             #set the num_record to the numSortedRecords
             self.calculateRecordSize(filename)
 
-            #write the csv data into the "_lf.data" file
+            #write the csv data into the "_lf.config" file
             self.writeConfig()
 
-            #close the database
-            self.config_contents.close()
-            self.data_contents.close()
-            self.overflow_contents.close()
+            
         
 
             self.isDBOpened = False
@@ -121,11 +136,14 @@ class myDB:
         return self.isDBCreated
 
     def open(self, filename): 
+        self.filestream = filename
+
+        #name of the 3 files that will be created for this database
+        self.config_file = self.filestream + "_lf.config"
+        self.data_file = self.filestream + "_lf.data"
+        self.overflow_file = self.filestream + "_lf.overflow"
         if self.checkDBexists(filename) == True :  
-            #open the database
-            self.config_contents = open(self.config_file, 'w+')
-            self.data_contents = open(self.data_file, 'w+')
-            self.overflow_contents = open(self.overflow_file, 'w+')
+            
 
 
             #set the variables from the config file
@@ -135,6 +153,10 @@ class myDB:
 
             self.readConfig()
 
+            #open the database
+            self.config_contents = open(self.config_file, 'w+')
+            self.data_contents = open(self.data_file, 'w+')
+            self.overflow_contents = open(self.overflow_file, 'w+')
 
             #indicate that the user can query if the database is opened
             self.isDBOpened = True
@@ -149,7 +171,7 @@ class myDB:
 
 
     def calculateRecordSize(self,filename):
-        self.filestream = filename
+        #self.filestream = filename
 
         record_count = 0
         row_record_size = 0
@@ -186,15 +208,23 @@ class myDB:
 
 
     def writeConfig(self):
+        config_contents = open(self.config_file, 'w+')
+        print(f'config file: '+self.config_file)
+        
         #writing to file
-        config_writer = csv.writer(self.config_contents, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        config_writer = csv.writer(config_contents, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
         #column names
         config_writer.writerow(['id', 'state', 'city', 'name'])
+        print(f'writing to config file.')
         #database stats
         config_writer.writerow([self.numSortedRecords, self.numOverflowRecords, self.record_size,self.db_size])   
+        print(f'numSortedRecords:' + self.numSortedRecords)
+        print(f'record size:' + self.record_size)
+        config_contents.close()
 
     def readConfig(self):
+        self.config_contents = open(self.config_file, 'w+')
         config_reader = csv.reader(self.config_contents,delimiter=',') 
         line_count = 0
         for row in config_reader:
@@ -212,6 +242,7 @@ class myDB:
 
             line_count += 1
         print(f'Processed {line_count} lines.')
+        self.config_contents.close()
 
     def writeRecord(self,file_pos,id,state,city,name):
         #writing to file
@@ -219,7 +250,7 @@ class myDB:
 
         #move to record position
         self.data_file.seek(0,0)
-        self.data_file.seek((self.numSortedRecords-1) *self.record_size)
+        self.data_file.seek(file_pos,(self.numSortedRecords-1) *self.record_size)
 
         #write data
         data_writer.writerow([id, state, city, name])
